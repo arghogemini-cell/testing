@@ -1,3 +1,5 @@
+task.wait(10)
+
 local config = getgenv().RayVinzConfig
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
@@ -49,41 +51,15 @@ local playerPen = getMyPen()
 if not playerPen then return warn("❌ Pen not found") end
 local existingPetUIDs = {}
 for _, pet in pairs(playerPen.Pets:GetChildren()) do existingPetUIDs[pet.Name] = true end
-local eggs = playerPen.Eggs:GetChildren()
-if #eggs == 0 then return warn("❌ No eggs found") end
-
-local eggPos = eggs[1].Root.Position
+local targetEgg = playerPen.Eggs:GetChildren()[1]
+if not targetEgg then return warn("❌ No egg found") end
+local eggPos = targetEgg.Root.Position
+print("🥚 Hatching: "..targetEgg.Name)
+TimerService.RequestEggHatch:InvokeServer(targetEgg.Name) 
+task.wait(2)
 local targetFound = false
 local newPetObj = nil
-
-for _, targetEgg in pairs(eggs) do
-    print("🥚 Hatching: "..targetEgg.Name)
-
-    TimerService.RequestEggHatch:InvokeServer(targetEgg.Name)
-    task.wait(2)
-
-    for _, petObj in pairs(playerPen.Pets:GetChildren()) do
-        if not existingPetUIDs[petObj.Name] then
-            local nameAttr = petObj:GetAttribute("Name") or ""
-            local sizeAttr = petObj:GetAttribute("SizeName") or "Normal" 
-            local mutAttr = petObj:GetAttribute("Mutation") or "None"    
-
-            print("🔍 Detected: "..tostring(nameAttr).." | "..tostring(sizeAttr).." | "..tostring(mutAttr))
-
-            if tableContains(config.pet, nameAttr) and 
-               tableContains(config.size, sizeAttr) and 
-               tableContains(config.mutation, mutAttr) then
-                targetFound = true
-                newPetObj = petObj
-                break
-            end
-
-            existingPetUIDs[petObj.Name] = true
-        end
-    end
-
-    if targetFound then break end
-end
+for _, petObj in pairs(playerPen.Pets:GetChildren()) do
     if not existingPetUIDs[petObj.Name] then
         local nameAttr = petObj:GetAttribute("Name") or ""
         local sizeAttr = petObj:GetAttribute("SizeName") or "Normal" 
